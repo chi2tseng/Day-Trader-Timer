@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Setup Clock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            body {
+                touch-action: manipulation;
+            }
+        }
+
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .background-text {
+            position: absolute;
+            top: calc(50% - 0.5em);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(10vw, 28vw, calc(25vh + 8vw));
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.05);
+            text-align: center;
+            line-height: clamp(0.8, 0.85, 0.9);
+            letter-spacing: clamp(-0.1em, -0.06em, -0.03em);
+            user-select: none;
+            pointer-events: none;
+            z-index: 1;
+            width: fit-content;
+            max-width: 99vw;
+            white-space: pre-line;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        .time-display {
+            font-size: clamp(12px, 10vw, 256px);
+            font-weight: 300;
+            font-family: 'Helvetica Neue', 'PingFang TC', 'Noto Sans TC', sans-serif;
+            letter-spacing: 0.02em;
+            text-shadow: none;
+            margin-bottom: 16px;
+            white-space: nowrap;
+        }
+
+        .timezone-display {
+            font-size: clamp(10px, 3vw, 24px);
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .calibration-indicator {
+            position: absolute;
+            top: 50px;
+            right: 30px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s ease;
+            z-index: 3;
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            .calibration-indicator {
+                top: 55px;
+                right: 15px;
+                width: 10px;
+                height: 10px;
+            }
+        }
+
+        .calibration-indicator.active {
+            transform: scale(1.4);
+        }
+
+        /* Overlay for dimming background */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0);
+            z-index: 9;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+            .overlay.visible {
+                opacity: 1;
+                visibility: visible;
+                background: rgba(0, 0, 0, 0.3);
+            }
+
+        /* Apple-style control panel */
+        .controls-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(50px);
+            -webkit-backdrop-filter: blur(50px);
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            z-index: 10;
+            transform: translateY(calc(100% + 50px));
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+            .controls-panel.visible {
+                transform: translateY(0);
+            }
+
+        @media (min-width: 769px) {
+            .controls-panel {
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%) translateY(calc(100% + 50px));
+                max-width: 600px;
+                width: 90%;
+                border-radius: 20px;
+            }
+
+                .controls-panel.visible {
+                    transform: translateX(-50%) translateY(0) !important;
+                }
+        }
+
+        /* Control sections with Apple-style cards */
+        .control-section {
+            background: rgba(44, 44, 46, 0.6);
+            border-radius: 13px;
+            padding: 16px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+            .control-section:last-child {
+                margin-bottom: 0;
+            }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 12px;
+        }
+
+        /* Volume control with Apple-style slider */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .speaker-icon {
+            width: 24px;
+            height: 24px;
+            color: rgba(255, 255, 255, 0.6);
+            flex-shrink: 0;
+        }
+
+        .volume-slider-container {
+            flex: 1;
+            position: relative;
+            height: 28px;
+            display: flex;
+            align-items: center;
+        }
+
+        .volume-track {
+            position: absolute;
+            width: 100%;
+            height: 6px;
+            background: rgba(120, 120, 128, 0.24);
+            border-radius: 3px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .volume-fill {
+            position: absolute;
+            height: 6px;
+            background: white;
+            border-radius: 3px;
+            transition: none;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .volume-slider {
+            position: relative;
+            width: 100%;
+            height: 28px;
+            background: transparent;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            z-index: 2;
+            margin: 0;
+            padding: 0;
+        }
+
+            .volume-slider::-webkit-slider-track {
+                width: 100%;
+                height: 28px;
+                background: transparent;
+                cursor: pointer;
+            }
+
+            .volume-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: white;
+                cursor: pointer;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                position: relative;
+            }
+
+            .volume-slider::-moz-range-track {
+                width: 100%;
+                height: 28px;
+                background: transparent;
+                cursor: pointer;
+            }
+
+            .volume-slider::-moz-range-thumb {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: white;
+                cursor: pointer;
+                border: none;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            }
+
+        /* Interval buttons with Apple-style design */
+        .intervals-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .intervals-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .interval-button {
+            padding: 14px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .interval-button::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            .interval-button:active::before {
+                opacity: 1;
+            }
+
+            .interval-button.selected {
+                background: #007AFF;
+                color: white;
+            }
+
+            .interval-button:not(.selected) {
+                background: rgba(120, 120, 128, 0.24);
+                color: rgba(255, 255, 255, 0.85);
+            }
+
+        /* Timing settings */
+        .timing-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .timing-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .timing-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .timing-select {
+            background: rgba(58, 58, 60, 0.6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 16px;
+            font-weight: 500;
+            min-width: 120px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+            .timing-select:focus {
+                outline: none;
+                background: rgba(72, 72, 74, 0.8);
+            }
+
+            .timing-select option {
+                background: rgb(28, 28, 30);
+                color: white;
+            }
+
+        /* Hints */
+        .fullscreen-hint {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            z-index: 3;
+            transition: opacity 0.25s ease;
+        }
+
+            .fullscreen-hint.hidden {
+                opacity: 0;
+            }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            .fullscreen-hint {
+                font-size: 11px;
+                top: 15px;
+                left: 15px;
+                right: 15px;
+                text-align: center;
+            }
+        }
+
+        .calibration-status {
+            position: absolute;
+            top: 20px;
+            right: 80px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            z-index: 3;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            .calibration-status {
+                top: 35px;
+                right: 15px;
+                font-size: 9px;
+            }
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(0);
+            }
+
+            to {
+                transform: translateY(100%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="appContainer">
+        <div class="fullscreen-hint" id="fullscreenHint">Press F11 for fullscreen • Tap anywhere to show controls</div>
+        
+        <div class="calibration-status" id="calibrationStatus">Last cal: --:--</div>
+        
+        <div class="background-text">
+            TRADE<br>SETUP
+        </div>
+
+        <div class="calibration-indicator" id="calibrationIndicator"></div>
+
+        <div class="main-content">
+            <div class="time-display" id="timeDisplay">00:00:00</div>
+            <div class="timezone-display" id="timezoneDisplay">New York Time</div>
+        </div>
+
+        <div class="overlay" id="overlay"></div>
+
+        <div class="controls-panel" id="controlsPanel">
+            <div class="control-section">
+                <div class="section-title">Timezone</div>
+                <div class="timing-control">
+                    <div class="timing-label">Trading Location</div>
+                    <select class="timing-select" id="timezoneSelect">
+                        <option value="America/New_York">New York (EST/EDT)</option>
+                        <option value="Europe/London">London (GMT/BST)</option>
+                        <option value="Asia/Tokyo">Tokyo</option>
+                        <option value="Asia/Hong_Kong">Hong Kong</option>
+                        <option value="America/Chicago">Chicago (CST/CDT)</option>
+                        <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+                        <option value="UTC">UTC</option>
+                        <option value="Asia/Shanghai">Shanghai</option>
+                        <option value="Asia/Singapore">Singapore</option>
+                        <option value="Australia/Sydney">Sydney</option>
+                        <option value="Europe/Frankfurt">Frankfurt</option>
+                        <option value="local">Local Device Time</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">Volume</div>
+                <div class="volume-control">
+                    <svg class="speaker-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                    </svg>
+                    <div class="volume-slider-container">
+                        <div class="volume-track"></div>
+                        <div class="volume-fill" id="volumeFill" style="width: 50%"></div>
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
+                    </div>
+                    <svg class="speaker-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">Beep Intervals</div>
+                <div class="intervals-container" id="intervalsContainer">
+                    <button class="interval-button" data-interval="1">1 min</button>
+                    <button class="interval-button" data-interval="2">2 min</button>
+                    <button class="interval-button" data-interval="3">3 min</button>
+                    <button class="interval-button selected" data-interval="5">5 min</button>
+                    <button class="interval-button" data-interval="10">10 min</button>
+                    <button class="interval-button" data-interval="15">15 min</button>
+                    <button class="interval-button" data-interval="20">20 min</button>
+                    <button class="interval-button" data-interval="30">30 min</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">Timing</div>
+                <div class="timing-settings">
+                    <div class="timing-control">
+                        <div class="timing-label">Alert before interval</div>
+                        <select class="timing-select" id="secondsBeforeSelect">
+                            <option value="3">3 sec</option>
+                            <option value="5" selected>5 sec</option>
+                            <option value="10">10 sec</option>
+                            <option value="15">15 sec</option>
+                            <option value="20">20 sec</option>
+                            <option value="30">30 sec</option>
+                            <option value="45">45 sec</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TradeSetupClock {
+            constructor() {
+                this.currentTime = new Date();
+                this.timezone = 'America/New_York'; // Default to New York
+                this.showControls = false;
+                this.volume = 0.5;
+                this.selectedIntervals = new Set([5]); // Default: 5 min selected
+                this.secondsBeforeBeep = 5;
+                this.lastBeepCheck = new Date();
+                this.lastCalibratedMinute = -1;
+                this.isDragging = false;
+                this.dragStartY = 0;
+                this.panelStartY = 0;
+                
+                // Audio context for beep generation
+                this.audioContext = null;
+                this.gainNode = null;
+                
+                this.initializeApp();
+                this.setupEventListeners();
+                this.startTimers();
+            }
+
+            // Get current time in the selected timezone
+            getCurrentTimeInTimezone() {
+                const now = new Date();
+                if (this.timezone === 'local') {
+                    return now;
+                }
+                
+                // Create a new date object representing the time in the target timezone
+                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+                const timeInTimezone = new Date(utc);
+                
+                // Get the timezone offset for the target timezone
+                const tempDate = new Date().toLocaleString('en-US', { timeZone: this.timezone });
+                const tzOffset = new Date(tempDate).getTime() - new Date(tempDate + ' UTC').getTime();
+                
+                return new Date(now.getTime() + tzOffset);
+            }
+
+            // Get timezone info for display
+            getTimezoneInfo() {
+                if (this.timezone === 'local') {
+                    return 'Local Time';
+                }
+                
+                const timezoneNames = {
+                    'America/New_York': 'New York',
+                    'Europe/London': 'London', 
+                    'Asia/Tokyo': 'Tokyo',
+                    'Asia/Hong_Kong': 'Hong Kong',
+                    'America/Chicago': 'Chicago',
+                    'America/Los_Angeles': 'Los Angeles',
+                    'UTC': 'UTC',
+                    'Asia/Shanghai': 'Shanghai',
+                    'Asia/Singapore': 'Singapore',
+                    'Australia/Sydney': 'Sydney',
+                    'Europe/Frankfurt': 'Frankfurt'
+                };
+                
+                const name = timezoneNames[this.timezone] || this.timezone;
+                
+                // Get timezone abbreviation
+                try {
+                    const now = new Date();
+                    const tzName = now.toLocaleDateString('en-US', {
+                        timeZone: this.timezone,
+                        timeZoneName: 'short'
+                    }).split(', ')[1];
+                    return `${name} (${tzName})`;
+                } catch (e) {
+                    return name;
+                }
+            }
+
+            initializeApp() {
+                this.setupAudio();
+                this.calibrateTime();
+                this.updateDisplay();
+                this.updateTimezoneDisplay();
+                
+                // Hide hint after 5 seconds
+                setTimeout(() => {
+                    document.getElementById('fullscreenHint').classList.add('hidden');
+                }, 5000);
+                
+                // Request fullscreen on first user interaction
+                document.addEventListener('click', () => {
+                    if (!document.fullscreenElement && !this.isMobile()) {
+                        document.body.requestFullscreen().catch(e => {
+                            console.log('Fullscreen not supported');
+                        });
+                    }
+                }, { once: true });
+            }
+
+            setupAudio() {
+                // Initialize audio context on user interaction
+                document.addEventListener('click', () => {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.gainNode = this.audioContext.createGain();
+                        this.gainNode.connect(this.audioContext.destination);
+                        this.gainNode.gain.value = this.volume;
+                    }
+                }, { once: true });
+            }
+
+            setupEventListeners() {
+                // Toggle controls on click/touch
+                document.getElementById('appContainer').addEventListener('click', (e) => {
+                    if (!e.target.closest('.controls-panel') && !e.target.closest('.overlay')) {
+                        this.toggleControls();
+                    }
+                });
+
+                // Close panel when clicking overlay
+                document.getElementById('overlay').addEventListener('click', () => {
+                    this.hideControls();
+                });
+
+                // Touch support for mobile
+                document.getElementById('appContainer').addEventListener('touchstart', (e) => {
+                    if (!e.target.closest('.controls-panel') && !e.target.closest('.overlay')) {
+                        e.preventDefault();
+                        this.toggleControls();
+                    }
+                }, { passive: false });
+
+                // Drag to dismiss - panel itself is draggable
+                const panel = document.getElementById('controlsPanel');
+                
+                // Mouse events
+                panel.addEventListener('mousedown', (e) => {
+                    if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('select')) {
+                        this.startDrag(e);
+                    }
+                });
+                document.addEventListener('mousemove', (e) => this.drag(e));
+                document.addEventListener('mouseup', () => this.endDrag());
+                
+                // Touch events
+                panel.addEventListener('touchstart', (e) => {
+                    if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('select')) {
+                        this.startDrag(e.touches[0]);
+                    }
+                }, { passive: false });
+                document.addEventListener('touchmove', (e) => this.drag(e.touches[0]), { passive: false });
+                document.addEventListener('touchend', () => this.endDrag());
+
+                // Timezone selector
+                document.getElementById('timezoneSelect').addEventListener('change', (e) => {
+                    this.timezone = e.target.value;
+                    this.updateTimezoneDisplay();
+                    this.calibrateTime();
+                });
+
+                // Volume control
+                document.getElementById('volumeSlider').addEventListener('input', (e) => {
+                    this.volume = e.target.value / 100;
+                    if (this.gainNode) {
+                        this.gainNode.gain.value = this.volume;
+                    }
+                    // Update volume fill
+                    document.getElementById('volumeFill').style.width = e.target.value + '%';
+                });
+
+                // Interval buttons
+                document.querySelectorAll('.interval-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const interval = parseInt(button.dataset.interval);
+                        this.toggleInterval(interval);
+                    });
+                    
+                    // Touch support
+                    button.addEventListener('touchstart', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const interval = parseInt(button.dataset.interval);
+                        this.toggleInterval(interval);
+                    }, { passive: false });
+                });
+
+                // Seconds before beep
+                document.getElementById('secondsBeforeSelect').addEventListener('change', (e) => {
+                    this.secondsBeforeBeep = parseInt(e.target.value);
+                });
+
+                // Keyboard shortcuts (only for non-mobile)
+                if (!this.isMobile()) {
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') {
+                            this.hideControls();
+                        }
+                        if (e.key === ' ') {
+                            e.preventDefault();
+                            this.toggleControls();
+                        }
+                    });
+                }
+
+                // Prevent context menu
+                document.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                });
+            }
+
+            startDrag(e) {
+                this.isDragging = true;
+                this.dragStartY = e.clientY || e.pageY;
+                const panel = document.getElementById('controlsPanel');
+                const overlay = document.getElementById('overlay');
+                this.panelStartY = 0;
+                panel.style.transition = 'none';
+                overlay.style.transition = 'opacity 0.1s ease';
+            }
+
+            drag(e) {
+                if (!this.isDragging) return;
+                
+                const currentY = e.clientY || e.pageY;
+                const deltaY = currentY - this.dragStartY;
+                
+                if (deltaY > 0) {
+                    const panel = document.getElementById('controlsPanel');
+                    
+                    // Handle desktop vs mobile transform
+                    if (window.innerWidth >= 769) {
+                        panel.style.transform = `translateX(-50%) translateY(${deltaY}px)`;
+                    } else {
+                        panel.style.transform = `translateY(${deltaY}px)`;
+                    }
+                    
+                    // Update overlay opacity based on drag distance
+                    const panelHeight = panel.offsetHeight;
+                    const opacity = 1 - (deltaY / panelHeight);
+                    document.getElementById('overlay').style.opacity = Math.max(0, opacity);
+                }
+            }
+
+            endDrag() {
+                if (!this.isDragging) return;
+                
+                this.isDragging = false;
+                const panel = document.getElementById('controlsPanel');
+                const overlay = document.getElementById('overlay');
+                
+                // Get current Y position from transform
+                let translateY = 0;
+                const transform = window.getComputedStyle(panel).transform;
+                if (transform && transform !== 'none') {
+                    const matrix = transform.match(/matrix.*\((.+)\)/);
+                    if (matrix) {
+                        const values = matrix[1].split(', ');
+                        translateY = parseFloat(values[5]) || 0;
+                    }
+                }
+                
+                // Re-enable transitions
+                panel.style.transition = '';
+                overlay.style.transition = '';
+                
+                // If dragged more than 20% of panel height, dismiss
+                if (translateY > panel.offsetHeight * 0.2) {
+                    this.hideControls();
+                } else {
+                    // Reset position by removing inline styles
+                    panel.style.transform = '';
+                    overlay.style.opacity = '';
+                }
+            }
+
+            startTimers() {
+                // 1-second timer for smooth UI updates
+                setInterval(() => {
+                    this.updateTime();
+                }, 1000);
+
+                // 60-second calibration timer (backup)
+                setInterval(() => {
+                    this.calibrateTime();
+                }, 60000);
+
+                // Additional precise minute calibration check every 5 seconds
+                setInterval(() => {
+                    this.checkMinuteCalibration();
+                }, 5000);
+            }
+
+            updateTime() {
+                this.currentTime = this.getCurrentTimeInTimezone();
+                
+                // Get minute and second in the target timezone
+                const currentMinute = this.getTimezoneMinute();
+                const currentSecond = this.getTimezoneSecond();
+                
+                // Calibrate exactly at the start of each minute (second 0) or if minute changed
+                if ((currentSecond === 0 || currentMinute !== this.lastCalibratedMinute)) {
+                    this.calibrateTime();
+                    this.updateDisplay();
+                    return; // Skip rest of update since calibrateTime already set current time
+                }
+
+                this.updateDisplay();
+
+                // Check for beeps
+                if (this.shouldCheckForBeep()) {
+                    if (this.isInCountdownPeriod()) {
+                        this.playBeep();
+                    }
+                    this.lastBeepCheck = new Date(this.currentTime);
+                }
+            }
+
+            // Get minute in the selected timezone
+            getTimezoneMinute() {
+                if (this.timezone === 'local') {
+                    return new Date().getMinutes();
+                }
+                
+                const timeStr = new Date().toLocaleTimeString('en-US', {
+                    timeZone: this.timezone,
+                    minute: '2-digit',
+                    hour12: false
+                });
+                return parseInt(timeStr.split(':')[1]);
+            }
+
+            // Get second in the selected timezone
+            getTimezoneSecond() {
+                if (this.timezone === 'local') {
+                    return new Date().getSeconds();
+                }
+                
+                const timeStr = new Date().toLocaleTimeString('en-US', {
+                    timeZone: this.timezone,
+                    second: '2-digit',
+                    hour12: false
+                });
+                return parseInt(timeStr.split(':')[2]);
+            }
+
+            checkMinuteCalibration() {
+                const currentMinute = this.getTimezoneMinute();
+                const currentSecond = this.getTimezoneSecond();
+                
+                // Force calibration if we're at second 0 of any minute and haven't calibrated this minute
+                if (currentSecond <= 2 && currentMinute !== this.lastCalibratedMinute) {
+                    this.calibrateTime();
+                }
+            }
+
+            calibrateTime() {
+                const currentMinute = this.getTimezoneMinute();
+                const currentSecond = this.getTimezoneSecond();
+
+                // Always calibrate if it's a new minute, or if we're at second 0-2 of any minute
+                if (currentMinute !== this.lastCalibratedMinute || currentSecond <= 2) {
+                    this.currentTime = this.getCurrentTimeInTimezone();
+                    
+                    // Only update lastCalibratedMinute if we're truly at a new minute
+                    if (currentMinute !== this.lastCalibratedMinute) {
+                        this.lastCalibratedMinute = currentMinute;
+                        console.log(`Clock calibrated at ${this.getDisplayTime()}`);
+                        
+                        // Update calibration status display
+                        const statusEl = document.getElementById('calibrationStatus');
+                        statusEl.textContent = `Last cal: ${this.getDisplayTime().slice(0, 5)}`;
+                    }
+                    
+                    this.updateCalibrationIndicator();
+                }
+            }
+
+            getDisplayTime() {
+                if (this.timezone === 'local') {
+                    return new Date().toLocaleTimeString('en-US', {
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                }
+                
+                return new Date().toLocaleTimeString('en-US', {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZone: this.timezone
+                });
+            }
+
+            updateDisplay() {
+                const timeString = this.getDisplayTime();
+                document.getElementById('timeDisplay').textContent = timeString;
+            }
+
+            updateTimezoneDisplay() {
+                document.getElementById('timezoneDisplay').textContent = this.getTimezoneInfo();
+            }
+
+            updateCalibrationIndicator() {
+                const indicator = document.getElementById('calibrationIndicator');
+                indicator.classList.add('active');
+                setTimeout(() => {
+                    indicator.classList.remove('active');
+                }, 200);
+            }
+
+            shouldCheckForBeep() {
+                const currentSecond = this.getTimezoneSecond();
+                const lastCheckSecond = this.lastBeepCheck.getSeconds();
+                return currentSecond !== lastCheckSecond;
+            }
+
+            isInCountdownPeriod() {
+                const minute = this.getTimezoneMinute();
+                const second = this.getTimezoneSecond();
+
+                // Check for all selected intervals
+                for (const interval of this.selectedIntervals) {
+                    if (minute % interval === interval - 1 && second >= (60 - this.secondsBeforeBeep)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            playBeep() {
+                if (!this.audioContext || this.audioContext.state === 'suspended') {
+                    this.audioContext?.resume();
+                    return;
+                }
+
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(this.gainNode);
+
+                oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.1);
+            }
+
+            isMobile() {
+                return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            }
+
+            toggleControls() {
+                this.showControls = !this.showControls;
+                if (this.showControls) {
+                    this.showControlsPanel();
+                } else {
+                    this.hideControls();
+                }
+            }
+
+            showControlsPanel() {
+                const panel = document.getElementById('controlsPanel');
+                const overlay = document.getElementById('overlay');
+                
+                // Reset any inline styles first
+                panel.style.transform = '';
+                overlay.style.opacity = '';
+                overlay.style.transition = '';
+                
+                overlay.classList.add('visible');
+                panel.classList.add('visible');
+                this.showControls = true;
+            }
+
+            hideControls() {
+                const panel = document.getElementById('controlsPanel');
+                const overlay = document.getElementById('overlay');
+                
+                panel.classList.remove('visible');
+                overlay.classList.remove('visible');
+                this.showControls = false;
+                
+                // Reset any inline transforms
+                panel.style.transform = '';
+                overlay.style.opacity = '';
+            }
+
+            toggleInterval(interval) {
+                if (this.selectedIntervals.has(interval)) {
+                    if (this.selectedIntervals.size > 1) {
+                        this.selectedIntervals.delete(interval);
+                    }
+                } else {
+                    this.selectedIntervals.add(interval);
+                }
+                this.updateIntervalButtons();
+            }
+
+            updateIntervalButtons() {
+                document.querySelectorAll('.interval-button').forEach(button => {
+                    const interval = parseInt(button.dataset.interval);
+                    if (this.selectedIntervals.has(interval)) {
+                        button.classList.add('selected');
+                    } else {
+                        button.classList.remove('selected');
+                    }
+                });
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.clockApp = new TradeSetupClock();
+        });
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && window.clockApp) {
+                // Re-calibrate when page becomes visible again
+                window.clockApp.calibrateTime();
+            }
+        });
+    </script>
+</body>
+</html>
