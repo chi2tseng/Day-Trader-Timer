@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Short Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0e14;
+            --panel: #131a24;
+            --panel-2: #1a2330;
+            --line: #283546;
+            --text: #e6edf3;
+            --muted: #8b98a8;
+            --short: #ff4d4d;
+            --short-dim: #b33;
+            --green: #2ecc71;
+            --amber: #f4c542;
+            --accent: #4da3ff;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(1200px 800px at 70% -10%, #16202e 0%, var(--bg) 55%);
+            color: var(--text);
+            min-height: 100%;
+            -webkit-font-smoothing: antialiased;
+            padding: 24px 16px 48px;
+        }
+
+        .wrap {
+            max-width: 880px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            font-weight: 900;
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: var(--bg);
+            background: var(--short);
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+
+        h1 span {
+            color: var(--muted);
+            font-weight: 400;
+            font-size: 14px;
+            margin-left: 6px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 680px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 18px 18px 20px;
+        }
+
+        .card h2 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+        .field:last-child { margin-bottom: 0; }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .input-row {
+            position: relative;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            color: var(--text);
+            font-size: 17px;
+            font-weight: 700;
+            padding: 12px 14px;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            font-family: inherit;
+        }
+
+        input[type="number"]:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(77,163,255,.15);
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        .hint {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+
+        .results {
+            grid-column: 1 / -1;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 680px) {
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .stat {
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            padding: 14px;
+        }
+
+        .stat .k {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .stat .v {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 0.3px;
+            line-height: 1.1;
+        }
+
+        .stat .sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .v.short { color: var(--short); }
+        .v.green { color: var(--green); }
+        .v.amber { color: var(--amber); }
+
+        .rr-bar {
+            margin-top: 16px;
+            height: 14px;
+            border-radius: 7px;
+            overflow: hidden;
+            display: flex;
+            border: 1px solid var(--line);
+        }
+        .rr-bar .risk { background: var(--short-dim); }
+        .rr-bar .reward { background: var(--green); }
+
+        .rr-legend {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .verdict {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            border: 1px solid var(--line);
+            background: var(--panel-2);
+        }
+        .verdict.ok { color: var(--green); border-color: rgba(46,204,113,.35); }
+        .verdict.warn { color: var(--amber); border-color: rgba(244,197,66,.35); }
+        .verdict.bad { color: var(--short); border-color: rgba(255,77,77,.35); }
+
+        .invalid { color: var(--short) !important; }
+
+        footer {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header>
+            <span class="badge">Short</span>
+            <h1>Short Builder<span>做空交易設定計算器</span></h1>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>價格設定</h2>
+                <div class="field">
+                    <label for="entry">進場價 (Entry)</label>
+                    <div class="input-row">
+                        <input type="number" id="entry" step="any" inputmode="decimal" placeholder="100">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="stop">停損價 (Stop Loss) — 須高於進場價</label>
+                    <div class="input-row">
+                        <input type="number" id="stop" step="any" inputmode="decimal" placeholder="105">
+                    </div>
+                    <div class="hint">做空時停損在上方,觸及代表行情逆勢上漲。</div>
+                </div>
+                <div class="field">
+                    <label for="target">停利價 (Take Profit) — 須低於進場價</label>
+                    <div class="input-row">
+                        <input type="number" id="target" step="any" inputmode="decimal" placeholder="90">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>資金與風險</h2>
+                <div class="field">
+                    <label for="capital">帳戶資金</label>
+                    <div class="input-row">
+                        <input type="number" id="capital" step="any" inputmode="decimal" placeholder="10000">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="riskpct">單筆風險比例 (% of capital)</label>
+                    <div class="input-row">
+                        <input type="number" id="riskpct" step="any" inputmode="decimal" value="1" placeholder="1">
+                    </div>
+                    <div class="hint">建議 0.5%–2%。決定部位大小,讓停損損失等於此金額。</div>
+                </div>
+                <div class="field">
+                    <label for="minrr">目標最低風險報酬比 (R:R)</label>
+                    <div class="input-row">
+                        <input type="number" id="minrr" step="any" inputmode="decimal" value="2" placeholder="2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card results">
+                <h2>計算結果</h2>
+                <div class="stat-grid">
+                    <div class="stat">
+                        <div class="k">風險 / 股 (Risk)</div>
+                        <div class="v short" id="r-risk">—</div>
+                        <div class="sub" id="r-risk-pct"></div>
+                    </div>
+                    <div class="stat">
+                        <div class="k">報酬 / 股 (Reward)</div>
+                        <div class="v green" id="r-reward">—</div>
+                        <div class="sub" id="r-reward-pct"></div>
+                    </div>
+                    <div class="stat">
+                        <div class="k">風險報酬比 (R:R)</div>
+                        <div class="v" id="r-rr">—</div>
+                        <div class="sub" id="r-rr-note"></div>
+                    </div>
+                    <div class="stat">
+                        <div class="k">部位大小 (Size)</div>
+                        <div class="v" id="r-size">—</div>
+                        <div class="sub" id="r-notional"></div>
+                    </div>
+                </div>
+
+                <div class="rr-bar" id="rr-bar" style="display:none;">
+                    <div class="risk" id="bar-risk"></div>
+                    <div class="reward" id="bar-reward"></div>
+                </div>
+                <div class="rr-legend" id="rr-legend" style="display:none;">
+                    <span>風險 <span id="leg-risk"></span></span>
+                    <span>報酬 <span id="leg-reward"></span></span>
+                </div>
+
+                <div class="verdict" id="verdict">輸入價格以建立做空交易設定。</div>
+            </div>
+        </div>
+
+        <footer>
+            Short Builder · 本工具僅供交易規劃與部位試算,不構成投資建議。<br>
+            所有計算在瀏覽器本機完成,不會傳送任何資料。
+        </footer>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        const inputs = ['entry', 'stop', 'target', 'capital', 'riskpct', 'minrr'].map($);
+
+        const fmt = (n, d = 2) => {
+            if (!isFinite(n)) return '—';
+            return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        };
+        const fmtInt = (n) => isFinite(n) ? Math.floor(n).toLocaleString('en-US') : '—';
+
+        function setVerdict(text, cls) {
+            const v = $('verdict');
+            v.textContent = text;
+            v.className = 'verdict' + (cls ? ' ' + cls : '');
+        }
+
+        function reset() {
+            ['r-risk', 'r-reward', 'r-rr', 'r-size'].forEach(id => $(id).textContent = '—');
+            ['r-risk-pct', 'r-reward-pct', 'r-rr-note', 'r-notional'].forEach(id => $(id).textContent = '');
+            $('rr-bar').style.display = 'none';
+            $('rr-legend').style.display = 'none';
+        }
+
+        function compute() {
+            const entry = parseFloat($('entry').value);
+            const stop = parseFloat($('stop').value);
+            const target = parseFloat($('target').value);
+            const capital = parseFloat($('capital').value);
+            const riskpct = parseFloat($('riskpct').value);
+            const minrr = parseFloat($('minrr').value);
+
+            if (![entry, stop, target].every(isFinite) || entry <= 0) {
+                reset();
+                setVerdict('輸入進場價、停損價與停利價以建立做空設定。', '');
+                return;
+            }
+
+            // 做空:停損須高於進場、停利須低於進場
+            if (stop <= entry) {
+                reset();
+                setVerdict('⚠ 停損價必須高於進場價(做空時停損在上方)。', 'bad');
+                return;
+            }
+            if (target >= entry) {
+                reset();
+                setVerdict('⚠ 停利價必須低於進場價(做空時目標在下方)。', 'bad');
+                return;
+            }
+
+            const riskPerShare = stop - entry;       // 每股風險
+            const rewardPerShare = entry - target;   // 每股報酬
+            const rr = rewardPerShare / riskPerShare;
+
+            $('r-risk').textContent = fmt(riskPerShare);
+            $('r-risk-pct').textContent = '-' + fmt(riskPerShare / entry * 100) + '% 逆勢';
+            $('r-reward').textContent = fmt(rewardPerShare);
+            $('r-reward-pct').textContent = '+' + fmt(rewardPerShare / entry * 100) + '% 順勢';
+
+            const rrEl = $('r-rr');
+            rrEl.textContent = fmt(rr) + ' : 1';
+            rrEl.className = 'v ' + (isFinite(minrr) && rr >= minrr ? 'green' : (rr >= 1 ? 'amber' : 'short'));
+            $('r-rr-note').textContent = isFinite(minrr) ? ('目標 ≥ ' + fmt(minrr, rr % 1 === 0 ? 0 : 1) + ':1') : '';
+
+            // 部位大小
+            if (isFinite(capital) && isFinite(riskpct) && capital > 0 && riskpct > 0) {
+                const riskAmount = capital * riskpct / 100;
+                const shares = riskAmount / riskPerShare;
+                const notional = shares * entry;
+                $('r-size').textContent = fmtInt(shares);
+                $('r-size').className = 'v';
+                $('r-notional').textContent = '名目 $' + fmt(notional, 0) + ' · 風險 $' + fmt(riskAmount, 0);
+            } else {
+                $('r-size').textContent = '—';
+                $('r-notional').textContent = '輸入資金與風險比例';
+            }
+
+            // R:R 視覺化長條
+            const total = riskPerShare + rewardPerShare;
+            const riskW = riskPerShare / total * 100;
+            $('bar-risk').style.width = riskW + '%';
+            $('bar-reward').style.width = (100 - riskW) + '%';
+            $('rr-bar').style.display = 'flex';
+            $('rr-legend').style.display = 'flex';
+            $('leg-risk').textContent = fmt(riskPerShare);
+            $('leg-reward').textContent = fmt(rewardPerShare);
+
+            // 結論
+            if (isFinite(minrr) && rr >= minrr) {
+                setVerdict('✓ 設定良好:風險報酬比 ' + fmt(rr) + ':1,達到目標 ' + fmt(minrr, minrr % 1 === 0 ? 0 : 1) + ':1。', 'ok');
+            } else if (rr >= 1) {
+                setVerdict('△ 可接受但未達標:R:R 為 ' + fmt(rr) + ':1,低於目標。考慮收緊停損或放大目標。', 'warn');
+            } else {
+                setVerdict('✗ 風險大於報酬:R:R 僅 ' + fmt(rr) + ':1,此做空設定不理想。', 'bad');
+            }
+        }
+
+        inputs.forEach(el => el.addEventListener('input', compute));
+        compute();
+    </script>
+</body>
+</html>
