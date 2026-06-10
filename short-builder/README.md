@@ -9,7 +9,22 @@
 5. **燒錄字幕**(大字、黑邊白字,適合手機觀看)
 6. **配音**(可選,edge-tts 微軟語音,可取代原音或疊在原音上)
 
-## 安裝
+## 🌐 完全免費・線上執行(推薦)
+
+不想在自己電腦安裝任何東西?用 **Google Colab**,瀏覽器打開就能跑,免費還有 GPU:
+
+1. 把 `Short_Builder_Colab.ipynb` 上傳到 [Google Colab](https://colab.research.google.com/)
+   (或在 Colab 的「GitHub」分頁貼上這個 repo 網址直接開啟)。
+2. 上方選單 `執行階段 → 變更執行階段類型 → T4 GPU`(免費)。
+3. 由上往下每個格子按 ▶️ 執行:安裝 → 載入引擎 → 填網址做片 → 預覽下載。
+
+Colab 的網路可正常連到 YouTube、HuggingFace(下載 whisper 模型)與微軟 TTS,
+所以下載、辨識、配音全部都能用,且**完全免費**。
+
+> 其他免費選項:**Kaggle Notebooks**(同樣免費有 GPU);若想要「貼網址就出片」的
+> 網頁 App,可改做 **HuggingFace Spaces + Gradio**(免費版為 CPU,長片較慢)。
+
+## 💻 本機 CLI 執行
 
 需要 Python 3.9+ 與 ffmpeg:
 
